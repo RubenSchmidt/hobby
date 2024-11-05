@@ -34,6 +34,7 @@ jobs:
           echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
           echo "OPENSSL_LIB_DIR=$(brew --prefix openssl@3)/lib" >> $GITHUB_ENV
           echo "OPENSSL_INCLUDE_DIR=$(brew --prefix openssl@3)/include" >> $GITHUB_ENV
+          echo "MACOSX_DEPLOYMENT_TARGET=10.14" >> $GITHUB_ENV
 
       - name: Install OpenSSL (Linux)
         if: runner.os == 'Linux'
@@ -50,7 +51,11 @@ jobs:
           override: true
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+        run: |
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            export MACOSX_DEPLOYMENT_TARGET=10.14
+          fi
+          cargo build --release --target ${{ matrix.target }}
 
       - name: Create archive
         run: |
@@ -62,11 +67,8 @@ jobs:
           fi
 
       - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
+        uses: softprops/action-gh-release@v1
+        with:
+          files: hobby-${{ matrix.target }}.${{ matrix.archive }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./hobby-${{ matrix.target }}.${{ matrix.archive }}
-          asset_name: hobby-${{ matrix.target }}.${{ matrix.archive }}
-          asset_content_type: ${{ matrix.archive == 'zip' && 'application/zip' || 'application/gzip' }}

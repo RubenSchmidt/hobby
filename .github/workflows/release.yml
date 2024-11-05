@@ -1,3 +1,5 @@
+name: Release
+
 on:
   release:
     types: [created]
@@ -5,21 +7,42 @@ on:
 jobs:
   release:
     name: release ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - target: x86_64-unknown-linux-musl
-            archive: tar.gz tar.xz tar.zst
           - target: x86_64-apple-darwin
+            os: macos-latest
+            archive: zip
+          - target: aarch64-apple-darwin
+            os: macos-latest
             archive: zip
     steps:
-      - uses: actions/checkout@master
-      - name: Compile and release
-        uses: rust-build/rust-build.action@v1.4.5
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Create archive
+        run: |
+          cd target/${{ matrix.target }}/release
+          zip -r ../../../hobby-${{ matrix.target }}.zip hobby
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          RUSTTARGET: ${{ matrix.target }}
-          ARCHIVE_TYPES: ${{ matrix.archive }}
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./hobby-${{ matrix.target }}.zip
+          asset_name: hobby-${{ matrix.target }}.zip
+          asset_content_type: application/zip

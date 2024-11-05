@@ -47,7 +47,7 @@ CMD ["npm", "start"]
 
 ### Option 1: Download Binary (Recommended)
 
-1. Download the latest binary for your platform from the [releases page](https://github.com/yourusername/hobby/releases)
+1. Download the latest binary for your platform from the [releases page](https://github.com/rubenschmidt/hobby/releases)
 
 2. Make it executable and move it to your PATH:
 

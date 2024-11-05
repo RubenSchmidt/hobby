@@ -71,7 +71,12 @@ cargo install --path .
 
 ## Quick Start
 
-1. Initialize your server:
+0. Buy yourself an Ubuntu VM / VPS.
+
+I usually do this from [Hetzner](https://www.hetzner.com/) and pick the cheapest one to start out with. Add your personal SSH key to the server, Hobby CLI will use that to log in as root the first time.
+
+
+2. Initialize your server:
 ```bash
 hobby setup your-server-ip
 ```

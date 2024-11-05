@@ -4,6 +4,9 @@ on:
   release:
     types: [created]
 
+permissions:
+  contents: write
+
 jobs:
   release:
     name: release ${{ matrix.target }}
@@ -18,8 +21,25 @@ jobs:
           - target: aarch64-apple-darwin
             os: macos-latest
             archive: zip
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            archive: tar.gz
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install OpenSSL (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install openssl@3
+          echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
+          echo "OPENSSL_LIB_DIR=$(brew --prefix openssl@3)/lib" >> $GITHUB_ENV
+          echo "OPENSSL_INCLUDE_DIR=$(brew --prefix openssl@3)/include" >> $GITHUB_ENV
+
+      - name: Install OpenSSL (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -35,7 +55,11 @@ jobs:
       - name: Create archive
         run: |
           cd target/${{ matrix.target }}/release
-          zip -r ../../../hobby-${{ matrix.target }}.zip hobby
+          if [ "${{ matrix.archive }}" = "zip" ]; then
+            zip -r ../../../hobby-${{ matrix.target }}.zip hobby
+          else
+            tar czf ../../../hobby-${{ matrix.target }}.tar.gz hobby
+          fi
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -43,6 +67,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./hobby-${{ matrix.target }}.zip
-          asset_name: hobby-${{ matrix.target }}.zip
-          asset_content_type: application/zip
+          asset_path: ./hobby-${{ matrix.target }}.${{ matrix.archive }}
+          asset_name: hobby-${{ matrix.target }}.${{ matrix.archive }}
+          asset_content_type: ${{ matrix.archive == 'zip' && 'application/zip' || 'application/gzip' }}

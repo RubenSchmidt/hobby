@@ -36,6 +36,7 @@ pub fn launch() -> Result<()> {
         },
         networks: vec!["caddy".to_string()],
         environment: None,
+        volumes: app_config.volumes.clone(),
     };
 
     if let Some(env_config) = &app_config.env {
@@ -62,6 +63,18 @@ pub fn launch() -> Result<()> {
             let mut networks = HashMap::new();
             networks.insert("caddy".to_string(), DockerNetwork { external: true });
             networks
+        },
+        volumes: {
+            let mut volumes: HashMap<String, ()> = HashMap::new();
+            if let Some(vols) = &app_config.volumes {
+                for v in vols {
+                    let parts: Vec<&str> = v.split(":").collect();
+                    if parts.len() == 2 {
+                        volumes.insert(parts[0].to_string(), ());
+                    }
+                }
+            }
+            Some(volumes)
         },
     };
 

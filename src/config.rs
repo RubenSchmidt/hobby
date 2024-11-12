@@ -11,6 +11,8 @@ pub struct DockerService {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub environment: Option<HashMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volumes: Option<Vec<String>>,
     pub networks: Vec<String>,
 }
 
@@ -19,10 +21,20 @@ pub struct DockerNetwork {
     pub external: bool,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DockerVolume {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub external: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct DockerComposeFile {
     pub services: HashMap<String, DockerService>,
     pub networks: HashMap<String, DockerNetwork>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volumes: Option<HashMap<String, ()>>,
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -32,6 +44,7 @@ pub struct AppConfig {
     pub url: String,
     pub port: u16,
     pub env: Option<EnvConfig>,
+    pub volumes: Option<Vec<String>>,
     pub version: String,
 }
 

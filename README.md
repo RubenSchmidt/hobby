@@ -121,6 +121,17 @@ env:
   file: .env  # Path to your environment file
 ```
 
+### Volumes
+
+```yaml
+# hobby.yml
+name: "myapp"
+# ...
+volumes:
+  - dbdata:/app/data
+```
+
+
 ## Commands
 
 - `hobby setup <server-ip>`: Initialize server with Docker, Caddy, and security configurations

@@ -4,27 +4,41 @@ use homedir::my_home;
 use std::{fs, process::Command};
 use tracing::info;
 
+pub fn get_env_file_hash(config: &AppConfig) -> Result<String> {
+    if let Some(env) = &config.env {
+        if env.file.is_empty() {
+            return Ok("".to_string());
+        }
+
+        let env_path = format!("./{}", env.file);
+        let env_content = fs::read(&env_path)?;
+        Ok(format!("{:x}", md5::compute(&env_content)))
+    } else {
+        Ok("".to_string())
+    }
+}
+
 pub fn encrypt_and_upload_env_file(config: &mut AppConfig) -> Result<()> {
     if let Some(env) = &config.env {
         if env.file.is_empty() {
             return Ok(());
         }
 
-        let env_path = format!("./{}", env.file);
-        let env_content = fs::read(&env_path)?;
-        let current_hash = format!("{:x}", md5::compute(&env_content));
+        let hash = get_env_file_hash(config)?;
 
-        if current_hash == env.hash {
-            info!("Environment file unchanged, skipping update");
+        if hash == env.hash {
+            info!("Environment file has not changed, skipping encryption and upload");
             return Ok(());
         }
 
-        info!("Encrypting new environment file...");
+        info!("Encrypting environment file...");
         let config_dir = my_home()?
             .ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?
             .join(".config/hobby");
         let public_key_path = config_dir.join("key.pub");
         let public_key = fs::read_to_string(public_key_path)?.trim().to_string();
+
+        let env_path = format!("./{}", env.file);
 
         let encrypt_command = format!(
             "sops encrypt --age {} {} > encrypted.env",
@@ -62,7 +76,7 @@ pub fn encrypt_and_upload_env_file(config: &mut AppConfig) -> Result<()> {
 
         fs::remove_file("encrypted.env")?;
         if let Some(env) = &mut config.env {
-            env.hash = current_hash;
+            env.hash = hash;
         }
     }
     Ok(())

@@ -1,9 +1,8 @@
 use crate::commands::{connect_ssh, run_ssh_commands};
-use crate::config::{load_app_config, load_secret_key, validate_environment, AppConfig};
-use crate::docker::build_and_transfer_image;
+use crate::config::{self, load_app_config, load_secret_key, validate_environment, AppConfig};
+use crate::docker;
 use crate::env;
 use anyhow::Result;
-use std::fs;
 use std::time::Instant;
 use tracing::info;
 
@@ -14,14 +13,16 @@ pub fn deploy() -> Result<()> {
 
     let mut app_config = load_app_config()?;
 
-    if let Some(env_config) = &app_config.env {
-        if !env_config.file.is_empty() {
-            info!("Checking environment file changes...");
-            env::encrypt_and_upload_env_file(&mut app_config)?;
-        }
-    }
+    // TODO build docker compose file again, remove the old one and write the new one
+
+    let compose = docker::build_compose_config(&app_config)?;
+    docker::write_docker_compose_file(&compose)?;
+    docker::transfer_compose_file(&app_config)?;
+
+    env::encrypt_and_upload_env_file(&mut app_config)?;
+
     info!("Building and transferring docker image...");
-    build_and_transfer_image(&app_config)?;
+    docker::build_and_transfer_image(&app_config)?;
 
     info!("Deploying application...");
     deploy_application(&app_config)?;
@@ -73,8 +74,6 @@ fn update_version_and_config(config: &mut AppConfig) -> Result<()> {
     let version = config.version.trim_start_matches('V');
     let version_int = version.parse::<i64>()?;
     config.version = format!("V{}", version_int + 1);
-
-    let config_yaml = serde_yaml::to_string(&config)?;
-    fs::write("./hobby.yml", config_yaml)?;
+    config::save_application_config(config)?;
     Ok(())
 }

@@ -43,6 +43,9 @@ server: {}
 url: {}
 #env:
 #  file: .env
+#  hash: ""
+#volumes:
+#  - dbdata:/app/db/
 "#,
         server_addr, default_url
     );
@@ -114,8 +117,8 @@ fn setup_basic_system(session: &Session) -> Result<()> {
 		"sudo apt-get update -y",
 		"sudo apt-get upgrade -y",
 		"sudo apt-get install age ca-certificates curl vim -y",
-		"curl -LO https://github.com/getsops/sops/releases/download/v3.9.1/sops-v3.9.1.linux.amd64",
-		"sudo mv sops-v3.9.1.linux.amd64 /usr/local/bin/sops",
+		"curl -LO https://github.com/getsops/sops/releases/download/v3.9.1/sops-v3.9.1.linux.arm64",
+		"sudo mv sops-v3.9.1.linux.arm64 /usr/local/bin/sops",
 		"sudo chmod +x /usr/local/bin/sops",
     ];
     run_ssh_commands(session, &commands)

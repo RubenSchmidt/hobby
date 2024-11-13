@@ -1,29 +1,7 @@
 use anyhow::{anyhow, Result};
 use homedir::my_home;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fs};
-
-#[derive(Serialize, Deserialize)]
-pub struct DockerService {
-    pub image: String,
-    pub restart: String,
-    pub labels: HashMap<String, String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub environment: Option<HashMap<String, String>>,
-    pub networks: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct DockerNetwork {
-    pub external: bool,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct DockerComposeFile {
-    pub services: HashMap<String, DockerService>,
-    pub networks: HashMap<String, DockerNetwork>,
-}
+use std::fs;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct AppConfig {
@@ -32,6 +10,7 @@ pub struct AppConfig {
     pub url: String,
     pub port: u16,
     pub env: Option<EnvConfig>,
+    pub volumes: Option<Vec<String>>,
     pub version: String,
 }
 
@@ -46,6 +25,12 @@ pub fn load_app_config() -> Result<AppConfig> {
     let config_data = fs::read_to_string("./hobby.yml")?;
     let config: AppConfig = serde_yaml::from_str(&config_data)?;
     Ok(config)
+}
+
+pub fn save_application_config(config: &AppConfig) -> Result<()> {
+    let data = serde_yaml::to_string(config)?;
+    fs::write("./hobby.yml", data)?;
+    Ok(())
 }
 
 pub fn get_config_dir() -> Result<std::path::PathBuf> {

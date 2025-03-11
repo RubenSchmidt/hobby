@@ -113,13 +113,15 @@ fn configure_server(session: &Session) -> Result<()> {
 
 fn setup_basic_system(session: &Session) -> Result<()> {
     let commands = vec![
-       	"sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config && sudo systemctl restart ssh",
-		"sudo apt-get update -y",
-		"sudo apt-get upgrade -y",
-		"sudo apt-get install age ca-certificates curl vim -y",
-		"curl -LO https://github.com/getsops/sops/releases/download/v3.9.1/sops-v3.9.1.linux.arm64",
-		"sudo mv sops-v3.9.1.linux.arm64 /usr/local/bin/sops",
-		"sudo chmod +x /usr/local/bin/sops",
+        "sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config && sudo systemctl restart ssh",
+        "sudo apt-get update -y",
+        "sudo apt-get upgrade -y",
+        "sudo apt-get install age ca-certificates curl vim -y",
+        "ARCH=$(dpkg --print-architecture)",
+        "if [ \"$ARCH\" = \"arm64\" ]; then SOPS_ARCH=arm64; else SOPS_ARCH=amd64; fi",
+        "curl -LO \"https://github.com/getsops/sops/releases/download/v3.9.1/sops-v3.9.1.linux.$SOPS_ARCH\"",
+        "sudo mv \"sops-v3.9.1.linux.$SOPS_ARCH\" /usr/local/bin/sops",
+        "sudo chmod +x /usr/local/bin/sops",
     ];
     run_ssh_commands(session, &commands)
 }
